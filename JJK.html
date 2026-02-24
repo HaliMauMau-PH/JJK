@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JJK: Cursed Technique</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', sans-serif; }
+    
+        #ui {
+            position: absolute;
+            top: 5%;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #jjk-logo {
+            width: 350px;
+            max-width: 80vw;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+        }
+
+        #fallback-logo {
+            font-size: 3rem; margin: 0; letter-spacing: 10px; 
+            font-weight: 900; 
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to bottom, #fff, #888);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        #technique-name { 
+            font-size: 1.2rem; color: #00ffff; margin-top: 15px; 
+            font-weight: bold; letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            transition: color 0.3s ease;
+        }
+
+        #gesture-guide {
+            position: absolute;
+            top: 50%;
+            right: 2%;
+            transform: translateY(-50%);
+            width: 280px;
+            background: rgba(10, 10, 10, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            color: #fff;
+            z-index: 15;
+            box-shadow: 0 0 30px rgba(0,0,0,0.9);
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+        }
+
+        #gesture-guide h3 {
+            margin-top: 0;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 3px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .guide-item {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+        }
+
+        .guide-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .guide-tech { font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; text-shadow: 0 0 5px currentColor; }
+        .guide-gesture { color: #ccc; font-size: 0.8rem; }
+
+        .c-purple { color: #bb00ff; }
+        .c-red { color: #ff3333; }
+        .c-void { color: #00ffff; }
+        .c-shrine { color: #ff0000; }
+        .c-shadow { color: #00ff66; }
+        .c-iron { color: #ff6600; }
+
+        #video-container {
+            position: absolute;
+            bottom: 2%;
+            left: 18%;
+            transform: translateX(-50%) scaleX(-1);
+            width: 85vw;
+            max-width: 450px;
+            height: 42vh; 
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            z-index: 20;
+            background-color: #000; 
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+        #output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        #grain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+        }
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div id="grain"></div>
+
+    <div id="ui">
+        <img id="jjk-logo" src="logo.png">
+        <h1 id="fallback-logo" style="display:none;">呪術廻戦</h1>
+        
+        <div id="technique-name">CURSED ENERGY</div>
+    </div>
+
+    <div id="gesture-guide">
+        <h3>TECHNIQUE GUIDE</h3>
+        <div class="guide-item"><span class="guide-tech c-purple">Hollow Purple</span><span class="guide-gesture">🤌 Pinch (Thumb + Index)</span></div>
+        <div class="guide-item"><span class="guide-tech c-red">Reversal: Red</span><span class="guide-gesture">☝️ Index Finger Up</span></div>
+        <div class="guide-item"><span class="guide-tech c-void">Infinite Void</span><span class="guide-gesture">✌️ Index + Middle Up</span></div>
+        <div class="guide-item"><span class="guide-tech c-shadow">Chimera Shadow Garden</span><span class="guide-gesture">🤘 Horns (Index + Pinky Up)</span></div>
+        <div class="guide-item"><span class="guide-tech c-shrine">Malevolent Shrine</span><span class="guide-gesture">🖐️ Flat Hand (All Fingers Up)</span></div>
+        <div class="guide-item"><span class="guide-tech c-iron">Coffin of the Iron Mtn.</span><span class="guide-gesture">✊ Fist (All Fingers Down)</span></div>
+    </div>
+
+    <div id="video-container">
+        <video class="input_video"></video>
+        <canvas id="output_canvas"></canvas>
+    </div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    // --- Scene & Rendering ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 55;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    composer.addPass(bloomPass);
+
+    const COUNT = 20000;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(COUNT * 3);
+    const colors = new Float32Array(COUNT * 3);
+    const sizes = new Float32Array(COUNT);
+    
+    const targetPositions = new Float32Array(COUNT * 3);
+    const targetColors = new Float32Array(COUNT * 3);
+    const targetSizes = new Float32Array(COUNT);
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const particles = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.3, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+    scene.add(particles);
+
+    // --- Technique Functions --- 
+    function getRed(i) {
+        if(i < COUNT * 0.1) {
+            const r = Math.random() * 9;
+            const theta = Math.random() * 6.28; const phi = Math.acos(2 * Math.random() - 1);
+            return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi), r: 3, g: 0.1, b: 0.1, s: 2.5 };
+        } else {
+            const armCount = 3; const t = (i / COUNT); 
+            const angle = t * 15 + ((i % armCount) * (Math.PI * 2 / armCount));
+            const radius = 2 + (t * 40); 
+            return { x: radius * Math.cos(angle), y: radius * Math.sin(angle), z: (Math.random() - 0.5) * (10 * t), r: 0.8, g: 0, b: 0, s: 1.0 };
+        }
+    }
+
+    function getVoid(i) {
+        if (i < COUNT * 0.15) {
+            const angle = Math.random() * Math.PI * 2;
+            return { x: 26 * Math.cos(angle), y: 26 * Math.sin(angle), z: (Math.random()-0.5) * 1, r: 1, g: 1, b: 1, s: 2.5 };
+        } else {
+            const radius = 30 + Math.random() * 90;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            return { x: radius * Math.sin(phi) * Math.cos(theta), y: radius * Math.sin(phi) * Math.sin(theta), z: radius * Math.cos(phi), r: 0.1, g: 0.6, b: 1.0, s: 0.7 };
+        }
+    }
+
+    function getPurple(i) {
+        if (Math.random() > 0.8) return { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100, z: (Math.random() - 0.5) * 100, r: 0.5, g: 0.5, b: 0.7, s: 0.8 };
+        const r = 20; const theta = Math.random() * Math.PI * 2; const phi = Math.acos(2 * Math.random() - 1);
+        return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi), r: 0.6, g: 0.5, b: 1.0, s: 2.5 };
+    }
+
+    function getShrine(i) {
+        const total = COUNT;
+        if (i < total * 0.3) return { x: (Math.random()-0.5)*80, y: -15, z: (Math.random()-0.5)*80, r: 0.4, g: 0, b: 0, s: 0.8 };
+        else if (i < total * 0.4) {
+            const px = ((i%4)<2?1:-1)*12; const pz = ((i%4)%2==0?1:-1)*8;
+            return { x: px+(Math.random()-0.5)*2, y: -15+Math.random()*30, z: pz+(Math.random()-0.5)*2, r: 0.2, g: 0.2, b: 0.2, s: 0.6 };
+        } else if (i < total * 0.6) {
+            const t = Math.random() * Math.PI * 2; const rad = Math.random() * 30;
+            const curve = Math.pow(rad/30, 2) * 10; 
+            return { x: rad*Math.cos(t), y: 15 - curve + (Math.random()*2), z: rad*Math.sin(t)*0.6, r: 0.6, g: 0, b: 0, s: 0.6 };
+        } else return { x: 0, y: 0, z: 0, r: 0, g: 0, b: 0, s: 0 };
+    }
+
+    // UPDATED: Chimera Shadow Garden + Mahoraga's Wheel
+    function getShadow(i) {
+        // 15% of points dedicated to Mahoraga's Golden Wheel floating above
+        if (i < COUNT * 0.15) {
+            const isRim = Math.random() > 0.2;
+            const cy = 25; // High up in the air
+            const cz = -10; 
+            const R = 18;  // Wheel Radius
+            
+            let x, y, z;
+            if (isRim) {
+                // Thick outer ring
+                const theta = Math.random() * Math.PI * 2;
+                const ringWidth = (Math.random() - 0.5) * 4;
+                x = (R + ringWidth) * Math.cos(theta);
+                y = cy + (R + ringWidth) * Math.sin(theta);
+                z = cz + (Math.random() - 0.5) * 3;
+            } else {
+                // The 8 spokes of the wheel
+                const spoke = Math.floor(Math.random() * 8);
+                const angle = spoke * (Math.PI / 4); // 45 degrees apart
+                const r_dist = Math.random() * R;
+                const spread = (Math.random() - 0.5) * 1.5;
+                x = r_dist * Math.cos(angle) + spread;
+                y = cy + r_dist * Math.sin(angle) + spread;
+                z = cz + (Math.random() - 0.5) * 2;
+            }
+            return { x, y, z, r: 1.0, g: 0.85, b: 0.2, s: 2.5 }; // Bright glowing Gold
+        } 
+        else {
+            // Dark liquid floor and shadowy shikigami beasts (frogs/dogs) rising up
+            const radius = 10 + Math.random() * 70;
+            const angle = Math.random() * Math.PI * 2;
+            const isSpike = Math.random() > 0.92;
+            
+            let x = radius * Math.cos(angle);
+            let z = radius * Math.sin(angle) + (Math.random() - 0.5) * 20;
+            let y = -22 + (Math.random() * 6); 
+            
+            let r_col = 0.0, g_col = 0.15, b_col = 0.1, size = 3.5;
+
+            if (isSpike) {
+                y += Math.random() * 40; 
+                g_col = 0.6; b_col = 0.4; size = 1.2; // Toxic green aura
+            }
+            return { x, y, z, r: r_col, g: g_col, b: b_col, s: size };
+        }
+    }
+
+    // UPDATED: Coffin of the Iron Mountain (Full Volcano)
+    function getIronMountain(i) {
+        // 50% forms the Volcanic Cone Base
+        if (i < COUNT * 0.5) {
+            const t = Math.random(); // 0 is bottom, 1 is top
+            const y = -25 + t * 40;  // Builds up from y=-25 to y=15
+            const base_r = 45;
+            const top_r = 10;
+            // Slanted cone walls with some jagged noise
+            const r = top_r + (1 - t) * (base_r - top_r) + (Math.random() - 0.5) * 4; 
+            const angle = Math.random() * Math.PI * 2;
+            
+            const x = r * Math.cos(angle);
+            const z = r * Math.sin(angle);
+            
+            // Gets hotter and brighter near the top of the volcano
+            const isHot = t > 0.7 && Math.random() > 0.5;
+            let r_col = isHot ? 0.9 : 0.2 + t * 0.3;
+            let g_col = isHot ? 0.3 : 0.05 + t * 0.1;
+            let b_col = isHot ? 0.0 : 0.05 + t * 0.1;
+            let size = isHot ? 2.5 : 1.5;
+
+            return { x, y, z, r: r_col, g: g_col, b: b_col, s: size };
+        } 
+        // 20% forms the bubbling Lava Pool inside the Crater
+        else if (i < COUNT * 0.7) {
+            const r = Math.random() * 9;
+            const angle = Math.random() * Math.PI * 2;
+            const x = r * Math.cos(angle);
+            const z = r * Math.sin(angle);
+            const y = 14 + Math.random() * 2; // Surface of the crater
+            return { x, y, z, r: 1.0, g: 0.4, b: 0.0, s: 3.0 }; // Core orange lava
+        } 
+        // 30% forms the Erupting Plume and falling embers
+        else {
+            const isPlume = Math.random() > 0.5;
+            if (isPlume) {
+                // Magma shooting straight up from the crater
+                const x = (Math.random() - 0.5) * 15;
+                const z = (Math.random() - 0.5) * 15;
+                const y = 15 + Math.random() * 50; 
+                return { x, y, z, r: 1.0, g: 0.2, b: 0.0, s: 2.0 };
+            } else {
+                // Ash and embers scattered everywhere
+                const x = (Math.random() - 0.5) * 100;
+                const z = (Math.random() - 0.5) * 100;
+                const y = -20 + Math.random() * 80;
+                return { x, y, z, r: 0.8, g: 0.1, b: 0.0, s: 0.8 };
+            }
+        }
+    }
+
+    // --- Hand Tracking and System Logic ---
+    let currentTech = 'neutral';
+    let shakeIntensity = 0;
+    const videoElement = document.querySelector('.input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    let glowColor = '#00ffff';
+
+    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.7 });
+
+    let pendingTech = 'neutral';
+    let holdStartTime = 0;
+    const COOLDOWN_MS = 1500; 
+
+    hands.onResults((results) => {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        let detected = 'neutral';
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            results.multiHandLandmarks.forEach((lm) => {
+                drawConnectors(canvasCtx, lm, HAND_CONNECTIONS, {color: glowColor, lineWidth: 5});
+                drawLandmarks(canvasCtx, lm, {color: '#fff', lineWidth: 1, radius: 2});
+
+                const isUp = (t, p) => lm[t].y < lm[p].y;
+                const pinch = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
+                
+                if (pinch < 0.04) detected = 'purple';
+                else if (isUp(8,6) && isUp(12,10) && isUp(16,14) && isUp(20,18)) detected = 'shrine';
+                else if (isUp(8,6) && isUp(12,10) && !isUp(16,14) && !isUp(20,18)) detected = 'void';
+                else if (isUp(8,6) && !isUp(12,10) && !isUp(16,14) && isUp(20,18)) detected = 'shadow';
+                else if (isUp(8,6) && !isUp(12,10) && !isUp(16,14) && !isUp(20,18)) detected = 'red';
+                else if (!isUp(8,6) && !isUp(12,10) && !isUp(16,14) && !isUp(20,18)) detected = 'iron_mountain';
+            });
+        }
+
+        if (detected !== pendingTech) {
+            pendingTech = detected;
+            holdStartTime = Date.now();
+            
+            if (detected !== 'neutral' && detected !== currentTech) {
+                const nameEl = document.getElementById('technique-name');
+                nameEl.innerText = "CHARGING TECHNIQUE...";
+                nameEl.style.color = "#ffffff";
+                nameEl.style.textShadow = "0 0 15px rgba(255, 255, 255, 0.8)";
+            }
+        }
+
+        if (detected !== 'neutral') {
+            if (Date.now() - holdStartTime > COOLDOWN_MS) {
+                updateState(detected);
+            }
+        } else {
+            updateState('neutral');
+        }
+    });
+
+    function updateState(tech) {
+        if(currentTech === tech) return;
+        currentTech = tech;
+        const nameEl = document.getElementById('technique-name');
+        shakeIntensity = tech !== 'neutral' ? 0.4 : 0;
+
+        if(tech === 'shrine') { glowColor = '#ff0000'; nameEl.innerText = "Domain Expansion: Malevolent Shrine"; nameEl.style.color = glowColor; bloomPass.strength = 2.5; }
+        else if(tech === 'purple') { glowColor = '#bb00ff'; nameEl.innerText = "Secret Technique: Hollow Purple"; nameEl.style.color = glowColor; bloomPass.strength = 4.0; }
+        else if(tech === 'void') { glowColor = '#00ffff'; nameEl.innerText = "Domain Expansion: Infinite Void"; nameEl.style.color = glowColor; bloomPass.strength = 2.0; }
+        else if(tech === 'red') { glowColor = '#ff3333'; nameEl.innerText = "Reverse Cursed Technique: Red"; nameEl.style.color = glowColor; bloomPass.strength = 2.5; }
+        else if(tech === 'shadow') { glowColor = '#00ff66'; nameEl.innerText = "Domain Expansion: Chimera Shadow Garden"; nameEl.style.color = glowColor; bloomPass.strength = 2.5; }
+        else if(tech === 'iron_mountain') { glowColor = '#ff6600'; nameEl.innerText = "Domain Expansion: Coffin of the Iron Mountain"; nameEl.style.color = glowColor; bloomPass.strength = 3.0; }
+        else { glowColor = '#00ffff'; nameEl.innerText = "Neutral State"; nameEl.style.color = glowColor; bloomPass.strength = 1.0; }
+
+        for(let i=0; i<COUNT; i++) {
+            let p;
+            if(tech === 'neutral') {
+                if(i < COUNT * 0.05) {
+                    const r = 15 + Math.random()*20; const t = Math.random()*6.28; const ph = Math.random()*3.14;
+                    p = { x: r*Math.sin(ph)*Math.cos(t), y: r*Math.sin(ph)*Math.sin(t), z: r*Math.cos(ph), r: 0.1, g: 0.1, b: 0.2, s: 0.4 };
+                } else p = { x:0, y:0, z:0, r:0, g:0, b:0, s:0 };
+            }
+            else if(tech === 'red') p = getRed(i);
+            else if(tech === 'void') p = getVoid(i);
+            else if(tech === 'purple') p = getPurple(i);
+            else if(tech === 'shrine') p = getShrine(i);
+            else if(tech === 'shadow') p = getShadow(i);
+            else if(tech === 'iron_mountain') p = getIronMountain(i);
+            
+            targetPositions[i*3] = p.x; targetPositions[i*3+1] = p.y; targetPositions[i*3+2] = p.z;
+            targetColors[i*3] = p.r; targetColors[i*3+1] = p.g; targetColors[i*3+2] = p.b;
+            targetSizes[i] = p.s;
+        }
+    }
+
+    const cameraUtils = new Camera(videoElement, {
+        onFrame: async () => {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            await hands.send({image: videoElement});
+        }, width: 640, height: 480
+    });
+    
+    // Auto start the camera on page load
+    cameraUtils.start();
+
+    // Animation Loop
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        if (shakeIntensity > 0) {
+            renderer.domElement.style.transform = `translate(${(Math.random()-0.5)*shakeIntensity*40}px, ${(Math.random()-0.5)*shakeIntensity*40}px)`;
+        } else {
+            renderer.domElement.style.transform = 'translate(0,0)';
+        }
+
+        const pos = particles.geometry.attributes.position.array;
+        const col = particles.geometry.attributes.color.array;
+        const siz = particles.geometry.attributes.size.array;
+
+        for(let i=0; i<COUNT*3; i++) {
+            pos[i] += (targetPositions[i] - pos[i]) * 0.1;
+            col[i] += (targetColors[i] - col[i]) * 0.1;
+        }
+        for(let i=0; i<COUNT; i++) siz[i] += (targetSizes[i] - siz[i]) * 0.1;
+
+        particles.geometry.attributes.position.needsUpdate = true;
+        particles.geometry.attributes.color.needsUpdate = true;
+        particles.geometry.attributes.size.needsUpdate = true;
+        
+        if(currentTech === 'red') particles.rotation.z -= 0.1;
+        else if (currentTech === 'purple') { particles.rotation.z += 0.2; particles.rotation.y += 0.05; }
+        else if (['shrine', 'shadow', 'iron_mountain'].includes(currentTech)) particles.rotation.set(0, 0, 0); 
+        else particles.rotation.y += 0.005;
+
+        composer.render();
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>
