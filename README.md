@@ -4,8 +4,8 @@ An interactive web-based visualizer that uses AI hand-tracking and 3D particles 
 ## Description
 An interactive, browser-based visualizer inspired by the anime series *Jujutsu Kaisen*. It utilizes computer vision via **MediaPipe** for real-time hand tracking, and **Three.js** to render 3D volume-based particle effects. Perform the correct hand signs on camera to manifest iconic Cursed Techniques and Domain Expansions. 
 
-![Demo GIF](https://github.com/user-attachments/assets/8ad2b871-02c0-4b97-95f3-34682e745be0)
-*(Note: You can replace this link with an updated GIF showing the new domains!)*
+![Demo GIF](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExa2R2aTh0d2E2cXE1Z3N6Ym9lZzY0bnpkdjB4bXBhZnJuY2s2NzNzYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/AtdO4rsHIGeMTDGft5/giphy.gif))
+
 
 ## Features & Techniques
 
