@@ -45,6 +45,3 @@ You need a modern web browser (Chrome, Edge, Firefox) and an active webcam.
 2.  **Run the project**
     * **VS Code:** Install the "Live Server" extension, right-click `index.html`, and select "Open with Live Server".
     * Alternatively, you can just open the `index.html` file directly in your browser, though running it via a local server is recommended for camera permissions.
-
-## Note 
-This project was built and powered by **Google Gemini**.
